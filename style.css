@@ -1,0 +1,94 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: white;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  color: #333333;
+}
+
+.search-container {
+  margin-bottom: 20px;
+}
+
+.search-container input[type="text"] {
+  padding: 8px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: 1px solid #301318;
+  width: 300px;
+  margin-right: 10px;
+}
+
+button {
+  padding: 8px 16px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: none;
+  background-color: #333333;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  background-color: #ffffff;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  text-align: left;
+  box-shadow: 0px 2px 4px rgba(192, 12, 12, 0.095);
+}
+
+img {
+  box-sizing: border-box;
+  width: 50%;
+}
+
+.no-results {
+  color: #999999;
+  font-style: italic;
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.producto {
+  width: 60%;
+}
+
+.visualizacion {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.detalles {
+  margin-bottom: 10px;
+}
+
+.otrosProductos {
+  width: 35%;
+}
+
+#listaProductos {
+  list-style: none;
+  padding: 0;
+}
+
+#listaProductos li {
+  margin-bottom: 5px;
+}
+
+#chisteRandomBtn {
+  margin-top: 10px;
+}
