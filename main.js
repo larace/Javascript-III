@@ -1,55 +1,7 @@
 import { date, price, location } from './src/formato.js';
 import { cache } from './src/cache.js';
-
-class AppState {
-  constructor() {
-    if (AppState.instance) {
-      return AppState.instance;
-    }
-
-    this.state = {
-      favorites: [],
-      interested: [],
-      going: [],
-    };
-
-    AppState.instance = this;
-  }
-
-  static getInstance() {
-    return new AppState();
-  }
-
-  getFavorites() {
-    // Retorna una copia del array de favoritos para proteger los datos originales
-    return [...this.state.favorites];
-  }
-
-  setFavorites(favorites) {
-    // Actualiza el estado de favoritos con una copia del nuevo array
-    this.state.favorites = [...favorites];
-  }
-
-  getInterested() {
-    // Retorna una copia del array de interesados para proteger los datos originales
-    return [...this.state.interested];
-  }
-
-  setInterested(interested) {
-    // Actualiza el estado de interesados con una copia del nuevo array
-    this.state.interested = [...interested];
-  }
-
-  getGoing() {
-    // Retorna una copia del array de asistencias para proteger los datos originales
-    return [...this.state.going];
-  }
-
-  setGoing(going) {
-    // Actualiza el estado de asistencias con una copia del nuevo array
-    this.state.going = [...going];
-  }
-}
+import { AppState } from './src/appState.js';
+import { renderEvents, createEventElement, removeEventFromList } from './src/render.js';
 
 const appState = AppState.getInstance();
 
@@ -58,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const cargar = async (category) => {
     const eventos = cache[category] || await data(category);
-    render(eventos);
+    renderEvents(eventos, createElement);
   };
 
   const data = async (category) => {
@@ -74,14 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(error);
       return [];
     }
-  };
-
-  const render = (events) => {
-    grid.innerHTML = '';
-    events.forEach(evento => {
-      const elemento = createElement(evento);
-      grid.appendChild(elemento);
-    });
   };
 
   const createElement = (event) => {
@@ -115,11 +59,11 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const toggleFavorite = (event) => {
-    const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-    
+    const favorites = appState.getFavorites();
+
     // Verificar si el evento ya está en la lista de favoritos
     const index = favorites.findIndex(fav => fav.id === event.id);
-    
+
     if (index !== -1) {
       // Si el evento ya está en la lista, se elimina
       favorites.splice(index, 1);
@@ -127,69 +71,79 @@ document.addEventListener('DOMContentLoaded', () => {
       // Si el evento no está en la lista, se agrega
       favorites.push(event);
     }
-    
+
+    // Actualizar el estado de favoritos
+    appState.setFavorites(favorites);
     // Guardar la lista de favoritos actualizada en el local storage
     localStorage.setItem('favorites', JSON.stringify(favorites));
   };
-  
+
   const toggleInterested = (event) => {
-    const interested = JSON.parse(localStorage.getItem('interested')) || [];
-    const going = JSON.parse(localStorage.getItem('going')) || [];
-    
+    const interested = appState.getInterested();
+    const going = appState.getGoing();
+
     // Verificar si el evento ya está en la lista de interesados
     const index = interested.findIndex(int => int.id === event.id);
-    
+
     if (index !== -1) {
       // Si el evento ya está en la lista de interesados, se elimina
       interested.splice(index, 1);
     } else {
       // Si el evento no está en la lista de interesados
-      
+
       // Verificar si el evento ya está en la lista de "Going"
       const goingIndex = going.findIndex(g => g.id === event.id);
       if (goingIndex !== -1) {
         // Si el evento ya está en la lista de "Going", se elimina de esa lista
         going.splice(goingIndex, 1);
       }
-      
+
       // Se agrega el evento a la lista de interesados
       interested.push(event);
     }
-    
+
+    // Actualizar el estado de interesados y asistencias
+    appState.setInterested(interested);
+    appState.setGoing(going);
+
     // Guardar las listas actualizadas en el local storage
     localStorage.setItem('interested', JSON.stringify(interested));
     localStorage.setItem('going', JSON.stringify(going));
   };
-  
+
   const toggleGoing = (event) => {
-    const interested = JSON.parse(localStorage.getItem('interested')) || [];
-    const going = JSON.parse(localStorage.getItem('going')) || [];
-    
+    const interested = appState.getInterested();
+    const going = appState.getGoing();
+
     // Verificar si el evento ya está en la lista de "Going"
     const index = going.findIndex(g => g.id === event.id);
-    
+
     if (index !== -1) {
       // Si el evento ya está en la lista de "Going", se elimina
       going.splice(index, 1);
     } else {
       // Si el evento no está en la lista de "Going"
-      
+
       // Verificar si el evento ya está en la lista de interesados
       const interestedIndex = interested.findIndex(int => int.id === event.id);
       if (interestedIndex !== -1) {
         // Si el evento ya está en la lista de interesados, se elimina de esa lista
         interested.splice(interestedIndex, 1);
       }
-      
+
       // Se agrega el evento a la lista de "Going"
       going.push(event);
     }
-    
+
+    // Actualizar el estado de interesados y asistencias
+    appState.setInterested(interested);
+    appState.setGoing(going);
+
     // Guardar las listas actualizadas en el local storage
     localStorage.setItem('interested', JSON.stringify(interested));
     localStorage.setItem('going', JSON.stringify(going));
   };
-  
+
   // ...
   const tabs = document.querySelectorAll('.div-tab');
   tabs.forEach(tab => {
@@ -202,96 +156,35 @@ document.addEventListener('DOMContentLoaded', () => {
   const grid = document.getElementById('grid');
 
   const showFavorites = () => {
-    // Obtener la lista de eventos favoritos del localStorage
-    const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+    // Obtener la lista de eventos favoritos del estado de la aplicación
+    const favorites = appState.getFavorites();
 
     if (favorites.length === 0) {
       grid.innerHTML = 'There are no events in your favorites';
     } else {
-      render(favorites);
+      renderEvents(favorites, createEventElement, removeEventFromList);
     }
   };
 
   const showInterested = () => {
-    // Obtener la lista de eventos interesados del localStorage
-    const interested = JSON.parse(localStorage.getItem('interested')) || [];
+    // Obtener la lista de eventos interesados del estado de la aplicación
+    const interested = appState.getInterested();
 
     if (interested.length === 0) {
       grid.innerHTML = 'There are no events in your interested list';
     } else {
-      render(interested);
+      renderEvents(interested, createEventElement, removeEventFromList);
     }
   };
 
   const showGoing = () => {
-    // Obtener la lista de eventos a los que se va a asistir del localStorage
-    const going = JSON.parse(localStorage.getItem('going')) || [];
+    // Obtener la lista de eventos a los que se va a asistir del estado de la aplicación
+    const going = appState.getGoing();
 
     if (going.length === 0) {
       grid.innerHTML = 'There are no events in your going list';
     } else {
-      render(going);
-    }
-  };
-
-  const renderEvents = (events) => {
-    grid.innerHTML = '';
-    events.forEach(evento => {
-      const elemento = createElement(evento);
-      grid.appendChild(elemento);
-    });
-  };
-
-  const createEventElement = (event) => {
-    const elemento = document.createElement('div');
-    elemento.classList.add('event');
-
-    const fecha = date(new Date(event.date));
-    const precio = price(event.price);
-    const lugar = location(event.location);
-
-    elemento.innerHTML = `
-      <img src="${event.image}" alt="${event.title}">
-      <h3>${event.title}</h3>
-      <p>Date: ${fecha}</p>
-      <p>Location: ${lugar}</p>
-      <p>Price: ${precio}</p>
-      <button class="remove-button">Remove</button>
-    `;
-
-    const removeButton = elemento.querySelector('.remove-button');
-    removeButton.addEventListener('click', () => removeEventFromList(event));
-
-    return elemento;
-  };
-
-  const removeEventFromList = (event) => {
-    const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-    const interested = JSON.parse(localStorage.getItem('interested')) || [];
-    const going = JSON.parse(localStorage.getItem('going')) || [];
-
-    // Remueve el evento de la lista correspondiente
-    if (favorites.includes(event)) {
-      const updatedFavorites = favorites.filter(e => e !== event);
-      localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
-    } else if (interested.includes(event)) {
-      const updatedInterested = interested.filter(e => e !== event);
-      localStorage.setItem('interested', JSON.stringify(updatedInterested));
-    } else if (going.includes(event)) {
-      const updatedGoing = going.filter(e => e !== event);
-      localStorage.setItem('going', JSON.stringify(updatedGoing));
-    }
-
-    // Vuelve a mostrar la cuadrícula actualizada
-    const activeTab = document.querySelector('.tab.active');
-    const tabId = activeTab.id;
-
-    if (tabId === 'favorites-tab') {
-      showFavorites();
-    } else if (tabId === 'interested-tab') {
-      showInterested();
-    } else if (tabId === 'going-tab') {
-      showGoing();
+      renderEvents(going, createEventElement, removeEventFromList);
     }
   };
 
